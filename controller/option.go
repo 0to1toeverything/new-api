@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -19,6 +21,18 @@ import (
 )
 
 var completionRatioMetaOptionKeys = []string{
+	"ModelPrice",
+	"ModelRatio",
+	"CompletionRatio",
+	"CacheRatio",
+	"CreateCacheRatio",
+	"ImageRatio",
+	"AudioRatio",
+	"AudioCompletionRatio",
+}
+
+// modelOptionKeys lists option keys whose values are JSON maps keyed by model name.
+var modelOptionKeys = []string{
 	"ModelPrice",
 	"ModelRatio",
 	"CompletionRatio",
@@ -101,6 +115,12 @@ func GetOptions(c *gin.Context) {
 		}
 	}
 	common.OptionMapRWMutex.Unlock()
+
+	// Filter model-specific option values to only include models that
+	// appear in the abilities table. When no channels exist the abilities
+	// table is empty, so the pricing UI naturally shows nothing.
+	filterModelOptionsByAbilities(options)
+
 	options = append(options, &model.Option{
 		Key:   "CompletionRatioMeta",
 		Value: buildCompletionRatioMetaValue(optionValues),
@@ -110,6 +130,51 @@ func GetOptions(c *gin.Context) {
 		"message": "",
 		"data":    options,
 	})
+}
+
+// filterModelOptionsByAbilities filters model-specific option values to only
+// include models that appear in the abilities table.
+func filterModelOptionsByAbilities(options []*model.Option) {
+	models := model.GetEnabledModels()
+	modelSet := make(map[string]struct{}, len(models))
+	for _, m := range models {
+		modelSet[m] = struct{}{}
+	}
+
+	for _, opt := range options {
+		if opt == nil {
+			continue
+		}
+		if !slices.Contains(modelOptionKeys, opt.Key) {
+			continue
+		}
+		if filtered, ok := filterJSONByKeys(opt.Value, modelSet); ok {
+			opt.Value = filtered
+		}
+	}
+}
+
+// filterJSONByKeys parses raw as a JSON object and returns a new JSON string
+// containing only entries whose top-level keys are present in keep.
+func filterJSONByKeys(raw string, keep map[string]struct{}) (string, bool) {
+	if strings.TrimSpace(raw) == "" {
+		return "", false
+	}
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(raw), &obj); err != nil {
+		return "", false
+	}
+	filtered := make(map[string]any, len(obj))
+	for k, v := range obj {
+		if _, ok := keep[k]; ok {
+			filtered[k] = v
+		}
+	}
+	out, err := json.Marshal(filtered)
+	if err != nil {
+		return "", false
+	}
+	return string(out), true
 }
 
 type OptionUpdateRequest struct {
