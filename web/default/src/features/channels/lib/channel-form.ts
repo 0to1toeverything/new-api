@@ -161,6 +161,7 @@ export const channelFormSchema = z
       .string()
       .max(255, 'Remark must be less than 255 characters')
       .optional(),
+    icon: z.string().optional().nullable(),
     setting: z
       .string()
       .optional()
@@ -315,6 +316,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   status_code_mapping: '',
   tag: '',
   remark: '',
+  icon: null,
   setting: '',
   param_override: '',
   header_override: '',
@@ -456,6 +458,7 @@ export function transformChannelToFormDefaults(
     status_code_mapping: channel.status_code_mapping || '',
     tag: channel.tag || '',
     remark: channel.remark || '',
+    icon: channel.icon ?? null,
     setting: channel.setting || '',
     param_override: channel.param_override || '',
     header_override: channel.header_override || '',

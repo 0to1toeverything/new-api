@@ -55,8 +55,23 @@ const renderModelIconCol = (record, vendorMap) => {
 };
 
 // Render vendor column with icon
-const renderVendorTag = (vendorId, vendorMap, t) => {
-  if (!vendorId || !vendorMap[vendorId]) return '-';
+const renderVendorTag = (vendorId, vendorMap, record, t) => {
+  if (!vendorId || !vendorMap[vendorId]) {
+    // Fallback: use the first bound channel name when the vendor is unknown
+    const channels = record?.bound_channels ?? [];
+    if (channels.length > 0 && channels[0].name) {
+      return (
+        <Tag
+          color='white'
+          shape='circle'
+          prefixIcon={getLobeHubIcon('Layers', 14)}
+        >
+          {channels[0].name}
+        </Tag>
+      );
+    }
+    return '-';
+  }
   const v = vendorMap[vendorId];
   return (
     <Tag
@@ -320,7 +335,7 @@ export const getModelsColumns = ({
     {
       title: t('供应商'),
       dataIndex: 'vendor_id',
-      render: (vendorId, record) => renderVendorTag(vendorId, vendorMap, t),
+      render: (vendorId, record) => renderVendorTag(vendorId, vendorMap, record, t),
     },
     {
       title: t('标签'),

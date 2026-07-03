@@ -1888,6 +1888,27 @@ export function ChannelMutateDrawer({
                               </FormItem>
                             )}
                           />
+
+                          <FormField
+                            control={form.control}
+                            name='icon'
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('Vendor Icon')}</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder='OpenAI, Claude.Color, Qwen.Color'
+                                    {...field}
+                                    value={field.value ?? ''}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  {t('Lobe icon key for the Model Square vendor display.')}
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
 
                         {!isEditing && (

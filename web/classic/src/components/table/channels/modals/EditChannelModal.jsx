@@ -186,6 +186,7 @@ const EditChannelModal = (props) => {
     priority: 0,
     weight: 0,
     tag: '',
+    icon: '',
     multi_key_mode: 'random',
     // 渠道额外设置的默认值
     force_format: false,
@@ -2657,6 +2658,14 @@ const EditChannelModal = (props) => {
                       showClear
                       onChange={(value) => handleInputChange('name', value)}
                       autoComplete='new-password'
+                    />
+
+                    <Form.Input
+                      field='icon'
+                      label={t('供应商图标')}
+                      placeholder='OpenAI, Claude.Color, Qwen.Color'
+                      showClear
+                      onChange={(value) => handleInputChange('icon', value)}
                     />
 
                     {inputs.type === 33 && (

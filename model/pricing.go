@@ -177,6 +177,45 @@ func updatePricing() {
 	// 初始化默认供应商映射
 	initDefaultVendorMapping(metaMap, vendorMap, enableAbilities)
 
+	// 渠道名称回退供应商：为 vendor_id 未知的模型使用其绑定的渠道名称
+	// 从 enableAbilities 构建模型名 -> 渠道名映射
+	modelChannelMap := make(map[string]string, len(enableAbilities))
+	modelChannelIconMap := make(map[string]string, len(enableAbilities))
+	for _, ability := range enableAbilities {
+		if ability.ChannelName == "" {
+			continue
+		}
+		if _, exists := modelChannelMap[ability.Model]; !exists {
+			modelChannelMap[ability.Model] = ability.ChannelName
+		}
+		if ability.ChannelIcon != "" {
+			if _, exists := modelChannelIconMap[ability.Model]; !exists {
+				modelChannelIconMap[ability.Model] = ability.ChannelIcon
+			}
+		}
+	}
+	for _, meta := range metaMap {
+		if meta.VendorID != 0 {
+			if _, ok := vendorMap[meta.VendorID]; ok {
+				continue
+			}
+		}
+		// VendorID 未知或指向不存在的供应商，尝试用渠道名称回退
+		if chName, ok := modelChannelMap[meta.ModelName]; ok {
+			newID := getOrCreateVendor(chName, vendorMap)
+			if newID != 0 {
+				meta.VendorID = newID
+				// 如果渠道有自定义图标，更新供应商图标
+				if chIcon, ok2 := modelChannelIconMap[meta.ModelName]; ok2 && chIcon != "" {
+					if v, ok3 := vendorMap[newID]; ok3 {
+						v.Icon = chIcon
+						v.Update()
+					}
+				}
+			}
+		}
+	}
+
 	// 构建对前端友好的供应商列表
 	vendorsList = make([]PricingVendor, 0, len(vendorMap))
 	for _, v := range vendorMap {

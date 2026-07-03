@@ -248,7 +248,18 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
         const vendorId = row.getValue('vendor_id') as number
         const vendor = vendorMap[vendorId]
 
+        const model = row.original
+
         if (!vendor) {
+          // Fallback: use the first bound channel name when the vendor is unknown
+          const channels = model.bound_channels ?? []
+          if (channels.length > 0 && channels[0].name) {
+            return (
+              <BadgeCell>
+                <ProviderBadge label={channels[0].name} />
+              </BadgeCell>
+            )
+          }
           return <span className='text-muted-foreground text-xs'>-</span>
         }
 

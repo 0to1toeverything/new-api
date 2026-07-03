@@ -352,6 +352,7 @@ export interface ChannelFormData {
   status_code_mapping?: string
   tag?: string
   remark?: string
+  icon?: string | null
   setting?: string
   param_override?: string
   header_override?: string
