@@ -67,6 +67,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to Gitee Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.gitee.com
+          username: ${{ secrets.GITEE_USERNAME }}
+          password: ${{ secrets.GITEE_TOKEN }}
+
       - name: Extract metadata (labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -83,6 +90,8 @@ jobs:
           tags: |
             calciumion/new-api:${{ env.TAG }}-${{ matrix.arch }}
             calciumion/new-api:latest-${{ matrix.arch }}
+            registry.gitee.com/zerotoeverything/new-api:${{ env.TAG }}-${{ matrix.arch }}
+            registry.gitee.com/zerotoeverything/new-api:latest-${{ matrix.arch }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -132,6 +141,27 @@ jobs:
             -t calciumion/new-api:latest \
             calciumion/new-api:latest-amd64 \
             calciumion/new-api:latest-arm64
+
+      - name: Log in to Gitee Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.gitee.com
+          username: ${{ secrets.GITEE_USERNAME }}
+          password: ${{ secrets.GITEE_TOKEN }}
+
+      - name: Create & push Gitee manifest (version)
+        run: |
+          docker buildx imagetools create \
+            -t registry.gitee.com/zerotoeverything/new-api:${{ env.TAG }} \
+            registry.gitee.com/zerotoeverything/new-api:${{ env.TAG }}-amd64 \
+            registry.gitee.com/zerotoeverything/new-api:${{ env.TAG }}-arm64
+
+      - name: Create & push Gitee manifest (latest)
+        run: |
+          docker buildx imagetools create \
+            -t registry.gitee.com/zerotoeverything/new-api:latest \
+            registry.gitee.com/zerotoeverything/new-api:latest-amd64 \
+            registry.gitee.com/zerotoeverything/new-api:latest-arm64
 
       - name: Manifest summary
         run: |
