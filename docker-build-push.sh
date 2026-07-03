@@ -43,3 +43,15 @@ echo "   https://github.com/0to1toeverything/new-api/pkgs/container/new-api/sett
 echo
 echo "   Remote device command:"
 echo "   docker compose up -d"
+
+# ---------- mirror to Gitee (for Chinese users) ----------
+GITEE_IMAGE="registry.gitee.com/zerotoeverything/new-api:${TAG}"
+read -p "Mirror to Gitee? (y/N) " yn
+if [ "${yn:-n}" = "y" ] || [ "${yn:-n}" = "Y" ]; then
+  echo "==> Logging in to Gitee..."
+  docker login registry.gitee.com -u zerotoeverything
+  echo "==> Copying ${FULL_IMAGE} -> ${GITEE_IMAGE} ..."
+  docker tag "${FULL_IMAGE}" "${GITEE_IMAGE}"
+  docker push "${GITEE_IMAGE}"
+  echo "   Gitee image: ${GITEE_IMAGE}"
+fi
