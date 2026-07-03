@@ -599,7 +599,6 @@ func buildDifferences(localData map[string]any, successfulChannels []struct {
 
 			upstreamValues := make(map[string]interface{})
 			confidenceValues := make(map[string]bool)
-			hasUpstreamValue := false
 			hasDifference := false
 
 			for _, channel := range successfulChannels {
@@ -607,7 +606,6 @@ func buildDifferences(localData map[string]any, successfulChannels []struct {
 
 				if val, exists := valueMap(channel.data[ratioType])[modelName]; exists {
 					upstreamValue = normalizeSyncValue(ratioType, val)
-					hasUpstreamValue = true
 
 					if localValue != nil && !valuesEqual(localValue, upstreamValue) {
 						hasDifference = true
@@ -628,17 +626,9 @@ func buildDifferences(localData map[string]any, successfulChannels []struct {
 				confidenceValues[channel.name] = confidenceMap[channel.name][modelName]
 			}
 
-			shouldInclude := false
-
-			if localValue != nil {
-				if hasDifference {
-					shouldInclude = true
-				}
-			} else {
-				if hasUpstreamValue {
-					shouldInclude = true
-				}
-			}
+			// Only show diffs for models that already exist locally;
+			// upstream-only models are irrelevant to the configured providers.
+			shouldInclude := localValue != nil && hasDifference
 
 			if shouldInclude {
 				if differences[modelName] == nil {
