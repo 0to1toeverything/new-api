@@ -353,11 +353,6 @@ export const getModelsColumns = ({
       render: renderBoundChannels,
     },
     {
-      title: t('可用分组'),
-      dataIndex: 'enable_groups',
-      render: renderGroups,
-    },
-    {
       title: t('计费类型'),
       dataIndex: 'quota_types',
       render: (qts) => renderQuotaTypes(qts, t),
