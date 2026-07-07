@@ -303,6 +303,24 @@ func SetApiRouter(router *gin.Engine) {
 		groupRoute.Use(middleware.AdminAuth())
 		{
 			groupRoute.GET("/", controller.GetGroups)
+		// Department management
+		departmentRoute := apiRouter.Group("/department")
+		departmentRoute.Use(middleware.AdminAuth())
+		{
+			departmentRoute.GET("/", controller.ListDepartments)
+			departmentRoute.GET("/names", controller.GetDepartmentNames)
+			departmentRoute.GET("/:id", controller.GetDepartment)
+			departmentRoute.GET("/:id/members", controller.GetDepartmentMembers)
+			departmentRoute.GET("/tree", controller.GetDepartmentTree)
+			departmentRoute.GET("/:id/usage", controller.GetDepartmentUsage)
+		}
+		departmentRootRoute := apiRouter.Group("/department")
+		departmentRootRoute.Use(middleware.RootAuth())
+		{
+			departmentRootRoute.POST("/", controller.CreateDepartment)
+			departmentRootRoute.PUT("/:id", controller.UpdateDepartment)
+			departmentRootRoute.DELETE("/:id", controller.DeleteDepartment)
+			departmentRootRoute.POST("/:id/recharge", controller.RechargeDepartment)
 		}
 
 		prefillGroupRoute := apiRouter.Group("/prefill_group")
@@ -375,4 +393,5 @@ func SetApiRouter(router *gin.Engine) {
 			deploymentsRoute.DELETE("/:id", controller.DeleteDeployment)
 		}
 	}
+}
 }

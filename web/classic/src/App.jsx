@@ -45,6 +45,7 @@ import ModelPage from './pages/Model';
 import ModelDeploymentPage from './pages/ModelDeployment';
 import Playground from './pages/Playground';
 import Subscription from './pages/Subscription';
+import DepartmentPage from './pages/Department';
 import OAuth2Callback from './components/auth/OAuth2Callback';
 import PersonalSetting from './components/settings/PersonalSetting';
 import Setup from './pages/Setup';
@@ -120,6 +121,16 @@ function App() {
           element={
             <AdminRoute>
               <ModelDeploymentPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path='/console/department'
+          element={
+            <AdminRoute>
+              <Suspense fallback={<Loading />} key={location.pathname}>
+                <DepartmentPage />
+              </Suspense>
             </AdminRoute>
           }
         />

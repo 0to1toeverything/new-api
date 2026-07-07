@@ -92,6 +92,7 @@ type RelayInfo struct {
 	UserId            int
 	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
 	UserGroup         string // 用户所在分组
+	DepartmentId     *int   // 用户所属部门ID，nil 时走个人钱包
 	TokenUnlimited    bool
 	StartTime         time.Time
 	FirstResponseTime time.Time

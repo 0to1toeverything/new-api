@@ -298,7 +298,9 @@ func migrateDB() error {
 		&SystemTask{},
 		&SystemTaskLock{},
 		&CasbinRule{},
-		&AuthzRole{},
+		&AuthzRole{},AuthzRole{},
+		&Department{},
+		&DepartmentQuotaLog{},
 	)
 	if err != nil {
 		return err

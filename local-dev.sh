@@ -2,14 +2,17 @@
 set -euo pipefail
 
 # ── local-dev.sh ──
-# Build the backend (and classic frontend) locally without Docker.
+# Build the backend and frontend(s) locally without Docker.
 # Dependencies: Go 1.25+ (backend), bun (frontend).
 #
 # Usage:
 #   ./local-dev.sh build          Build backend only (./new-api)
-#   ./local-dev.sh build-web      Build classic frontend (web/classic/dist/)
-#   ./local-dev.sh build-all      Build classic frontend + backend
+#   ./local-dev.sh build-web      Build both frontends (web/default/dist/ + web/classic/dist/)
+#   ./local-dev.sh build-web-default  Build default frontend (web/default/dist/)
+#   ./local-dev.sh build-web-classic  Build classic frontend (web/classic/dist/)
+#   ./local-dev.sh build-all      Build both frontends + backend
 #   ./local-dev.sh run            Build backend and run on :3000
+#   ./local-dev.sh run-with-web   Build default frontend + backend and run
 #   ./local-dev.sh clean          Remove build artifacts
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -39,7 +42,7 @@ ensure_embed_dirs() {
   done
 }
 
-build_web() {
+build_web_classic() {
   echo "==> building classic frontend ..."
   if ! command -v bun &>/dev/null; then
     echo "ERROR: bun is not installed. Install it from https://bun.sh"
@@ -49,6 +52,23 @@ build_web() {
   cd "$SCRIPT_DIR/web/classic"
   DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION="$(version)" bun run build
   echo "==> frontend build complete -> web/classic/dist/"
+}
+
+build_web_default() {
+  echo "==> building default frontend ..."
+  if ! command -v bun &>/dev/null; then
+    echo "ERROR: bun is not installed. Install it from https://bun.sh"
+    exit 1
+  fi
+  cd "$SCRIPT_DIR/web" && bun install --frozen-lockfile
+  cd "$SCRIPT_DIR/web/default"
+  bun run build
+  echo "==> default frontend build complete -> web/default/dist/"
+}
+
+build_web() {
+  build_web_default
+  build_web_classic
 }
 
 build_backend() {
@@ -74,19 +94,28 @@ run() {
   exec "$BINARY" --port 3000 --log-dir ./logs
 }
 
+run_with_web() {
+  build_web_default
+  build_backend
+  run
+}
+
 clean() {
   rm -f "$BINARY"
   echo "==> cleaned $BINARY"
 }
 
 case "${1:-build}" in
-  build)      build_backend ;;
-  build-web)  build_web ;;
-  build-all)  build_web && build_backend ;;
-  run)        run ;;
-  clean)      clean ;;
+  build)              build_backend && build_web_classic;;
+  build-web)          build_web ;;
+  build-web-default)  build_web_default ;;
+  build-web-classic)  build_web_classic ;;
+  build-all)          build_web && build_backend ;;
+  run)                run ;;
+  run-with-web)       run_with_web ;;
+  clean)              clean ;;
   *)
-    echo "Usage: $0 {build|build-web|build-all|run|clean}"
+    echo "Usage: $0 {build|build-web|build-web-default|build-web-classic|build-all|run|run-with-web|clean}"
     exit 1
     ;;
 esac
