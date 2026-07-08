@@ -334,7 +334,7 @@ type DepartmentBudgetSummary struct {
 	TotalQuota     int `json:"total_quota"`
 	TotalUsedQuota int `json:"total_used_quota"`
 	TotalRemaining int `json:"total_remaining"`
-	DepartmentCount int `json:"department_count"`
+	DepartmentCount int64`json:"department_count"`
 }
 
 // GetDepartmentBudgetSummary 获取所有启用部门的额度汇总
