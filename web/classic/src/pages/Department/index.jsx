@@ -10,7 +10,7 @@ import { IconPlus, IconEdit, IconDelete, IconUserGroup } from '@douyinfe/semi-ic
 
 const { Text, Title } = Typography;
 
-const Department = () => {
+const Department = ({ noWrapper = false }) => {
   const { t } = useTranslation();
   const [treeData, setTreeData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,6 +68,7 @@ const Department = () => {
       render: (v) => renderQuota(v || 0),
     },
     { title: t('超卖上限'), dataIndex: 'oversell_limit', render: (v) => renderQuota(v || 0) },
+    { title: t('月度额度'), dataIndex: 'monthly_quota', render: (v) => renderQuota(v || 0) },
     { title: t('倍率'), dataIndex: 'ratio' },
     {
       title: t('状态'), dataIndex: 'status',
@@ -111,8 +112,8 @@ const Department = () => {
     } catch (e) { showError(e.message); }
   };
 
-  return (
-    <div className='mt-[60px] px-2'>
+  const inner = (
+    <>
       <Card className='!rounded-2xl shadow-sm border-0'>
         <div className='flex items-center justify-between mb-4'>
           <Title heading={4} className='m-0'>{t('部门管理')}</Title>
@@ -187,12 +188,23 @@ const Department = () => {
           />
         </SideSheet>
       )}
+    </>
+  );
+
+  if (noWrapper) {
+    return inner;
+  }
+
+  return (
+    <div className='mt-[60px] px-2'>
+      {inner}
     </div>
   );
 };
 
 const DeptFormModal = ({ visible, onClose, onSuccess, departmentOptions, mode, initialValues, t }) => {
   const formRef = useRef(null);
+  const quotaPerUnit = parseFloat(localStorage.getItem('quota_per_unit') || '500000');
   const [loading, setLoading] = useState(false);
 
   const submit = async (values) => {
@@ -202,7 +214,9 @@ const DeptFormModal = ({ visible, onClose, onSuccess, departmentOptions, mode, i
       const payload = {
         name: values.name,
         parent_id: values.parent_id || null,
-        oversell_limit: values.oversell_limit || 0,
+        quota: Math.round((Number(values.quota) || 0) * quotaPerUnit),
+        oversell_limit: Math.round((Number(values.oversell_limit) || 0) * quotaPerUnit),
+        monthly_quota: Math.round((Number(values.monthly_quota) || 0) * quotaPerUnit),
         ratio: values.ratio || 1,
         status: values.status ?? 1,
       };
@@ -221,11 +235,13 @@ const DeptFormModal = ({ visible, onClose, onSuccess, departmentOptions, mode, i
 
   const initValues = mode === 'edit' ? {
     name: initialValues?.name || '',
+    quota: initialValues?.quota != null ? Math.round(initialValues.quota / quotaPerUnit * 100) / 100 : 0,
     parent_id: initialValues?.parent_id || undefined,
-    oversell_limit: initialValues?.oversell_limit || 0,
+    oversell_limit: initialValues?.oversell_limit != null ? Math.round(initialValues.oversell_limit / quotaPerUnit * 100) / 100 : 0,
+    monthly_quota: initialValues?.monthly_quota != null ? Math.round(initialValues.monthly_quota / quotaPerUnit * 100) / 100 : 0,
     ratio: initialValues?.ratio || 1,
     status: initialValues?.status ?? 1,
-  } : { name: '', ratio: 1, oversell_limit: 0, status: 1 };
+  } : { name: '', ratio: 1, quota: 0, oversell_limit: 0, monthly_quota: 0, status: 1 };
 
   return (
     <Modal
@@ -239,7 +255,9 @@ const DeptFormModal = ({ visible, onClose, onSuccess, departmentOptions, mode, i
       <Form getFormApi={(api) => formRef.current = api} onSubmit={submit} initValues={initValues}>
         <Form.Input field='name' label={t('部门名称')} rules={[{ required: true, message: t('请输入部门名称') }]} />
         <Form.Select field='parent_id' label={t('上级部门')} optionList={departmentOptions} showClear placeholder={t('无（顶级部门）')} />
-        <Form.InputNumber field='oversell_limit' label={t('超卖上限')} min={0} step={100000} />
+        <Form.InputNumber field='quota' label={t('总额度')} min={0} step={0.01} prefix='$' />
+        <Form.InputNumber field='oversell_limit' label={t('超卖上限')} min={0} step={0.01} prefix='$' />
+        <Form.InputNumber field='monthly_quota' label={t('月度额度')} min={0} step={0.01} prefix='$' />
         <Form.InputNumber field='ratio' label={t('倍率')} min={0.1} step={0.1} />
         <Form.Select field='status' label={t('状态')} optionList={[{ label: t('已启用'), value: 1 }, { label: t('已停用'), value: 0 }]} />
       </Form>
@@ -251,11 +269,13 @@ const RechargeModal = ({ visible, onClose, onSuccess, department, t }) => {
   const formRef = useRef(null);
   const [loading, setLoading] = useState(false);
 
+  const quotaPerUnit = parseFloat(localStorage.getItem('quota_per_unit') || '500000');
+
   const submit = async (values) => {
     if (!values.amount || values.amount <= 0) return;
     setLoading(true);
     try {
-      const res = await API.post(`/api/department/${department.id}/recharge`, { amount: parseInt(values.amount) });
+      const res = await API.post(`/api/department/${department.id}/recharge`, { amount: Math.round(values.amount * quotaPerUnit) });
       if (res.data.success) { showSuccess(t('充值成功')); onSuccess(); }
       else showError(res.data.message);
     } catch (e) { showError(e.message); }
@@ -275,7 +295,7 @@ const RechargeModal = ({ visible, onClose, onSuccess, department, t }) => {
         {t('总额度')}: {renderQuota(department.quota || 0)} | {t('已用额度')}: {renderQuota(department.used_quota || 0)} | {t('剩余')}: {renderQuota((department.quota || 0) - (department.used_quota || 0))}
       </Text>
       <Form getFormApi={(api) => formRef.current = api} onSubmit={submit}>
-        <Form.InputNumber field='amount' label={t('充值额度')} min={1} step={500000} placeholder={t('请输入充值额度')} rules={[{ required: true }]} style={{ width: '100%' }} />
+        <Form.InputNumber field='amount' label={t('充值额度')} min={0.01} step={0.01} prefix='$' placeholder={t('请输入充值额度（美元）')} rules={[{ required: true, message: t('请输入充值额度') }, { validator: (_, value) => value > 0, message: t('充值额度必须大于0') }]} style={{ width: '100%' }} />
       </Form>
     </Modal>
   );

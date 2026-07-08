@@ -112,6 +112,11 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 - When cleaning tests, preserve meaningful regression coverage. If a deleted test covered a real contract indirectly, replace it with a smaller test that asserts that contract directly.
 
 ### Frontend Rules
+- Before editing any React component (page, panel, modal), MUST trace all consumers:
+  `grep -r "import.*ComponentName\|from.*ComponentPath" web/classic/src/` to find every file that imports or reimplements it.
+- When a component is duplicated across `pages/` and `components/`, confirm whether they are the same component or independent copies. If independent, apply changes to all copies.
+- Prefer eliminating duplicate implementations by making one import the other, rather than maintaining parallel code.
+
 
 - Use `bun` as the preferred package manager and script runner for the frontend (`web/default/`):
   - `bun install` for dependency installation

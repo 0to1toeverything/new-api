@@ -66,12 +66,12 @@ export default defineConfig(({ envMode }) => {
     },
     performance: {
       removeConsole: isProd ? ['log'] : false,
-      buildCache: {
-        cacheDigest: [process.env.VITE_REACT_APP_VERSION],
-      },
     },
     tools: {
       rspack: {
+        experiments: {
+          cache: false,
+        },
         module: {
           rules: [
             {

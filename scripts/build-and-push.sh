@@ -3,14 +3,31 @@
 set -e
 cd "$(dirname "$0")/.."
 
-TAG="${1:-latest}"
 REGISTRY="192.168.6.247:5000"
+SHORT_HASH=$(git rev-parse --short HEAD)
+TAG="${1:-${SHORT_HASH}}"
+IMAGE="${REGISTRY}/new-api"
 
-echo "==> 构建镜像 ${REGISTRY}/new-api:${TAG} ..."
-docker build -t ${REGISTRY}/new-api:${TAG} .
+# --no-cache on first arg "nocache"
+BUILD_FLAGS="--pull"
+if [[ "$1" == "nocache" ]]; then
+    BUILD_FLAGS="--pull --no-cache"
+    TAG="${2:-${SHORT_HASH}}"
+fi
 
-echo "==> 推送到 Registry ..."
-docker push ${REGISTRY}/new-api:${TAG}
+echo "==> 构建 ${IMAGE}:${TAG} ..."
+docker build \
+    ${BUILD_FLAGS} \
+    -t "${IMAGE}:${TAG}" \
+    -t "${IMAGE}:latest" \
+    .
 
-echo "==> 完成，生产机执行更新:"
+echo "==> 推送 ${IMAGE}:${TAG} ..."
+docker push "${IMAGE}:${TAG}"
+
+echo "==> 推送 ${IMAGE}:latest ..."
+docker push "${IMAGE}:latest"
+
+echo "==> 完成"
+echo "    生产机执行:"
 echo "    cd ~/new-api && docker compose pull && docker compose up -d"

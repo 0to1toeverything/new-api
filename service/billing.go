@@ -16,7 +16,6 @@ import (
 const (
 	BillingSourceWallet       = "wallet"
 	BillingSourceSubscription = "subscription"
-	BillingSourceDepartment  = "department"
 )
 
 // PreConsumeBilling 根据用户计费偏好创建 BillingSession 并执行预扣费。
@@ -91,15 +90,9 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 // and verifies each level has sufficient quota (including oversell_limit).
 // The chain IDs are stored on relayInfo for use in Settle/Refund.
 func PreConsumeDepartmentQuota(c *gin.Context, preConsumedQuota int, relayInfo *relaycommon.RelayInfo) *types.NewAPIError {
-	// Query user's department_id from DB since it's not pre-loaded in relayInfo
-	user, err := model.GetUserById(relayInfo.UserId, false)
-	if err != nil {
-		return nil // user not found, skip department check
-	}
-	if user.DepartmentId == nil || *user.DepartmentId == 0 {
+	if relayInfo.DepartmentId == nil || *relayInfo.DepartmentId == 0 {
 		return nil // user not in any department, skip
 	}
-	relayInfo.DepartmentId = user.DepartmentId
 
 	chain, err := model.GetDepartmentChain(*relayInfo.DepartmentId)
 	if err != nil {

@@ -105,6 +105,7 @@ func UpdateDepartment(c *gin.Context) {
 	var req struct {
 		Name          string  `json:"name"`
 		ParentId      *int    `json:"parent_id"`
+		Quota         int     `json:"quota"`
 		OversellLimit int     `json:"oversell_limit"`
 		MonthlyQuota  int     `json:"monthly_quota"`
 		Ratio         float64 `json:"ratio"`
@@ -128,6 +129,7 @@ func UpdateDepartment(c *gin.Context) {
 		}
 	}
 	dept.ParentId = req.ParentId
+	dept.Quota = req.Quota
 	dept.OversellLimit = req.OversellLimit
 	dept.MonthlyQuota = req.MonthlyQuota
 	dept.Ratio = req.Ratio
@@ -142,7 +144,8 @@ func UpdateDepartment(c *gin.Context) {
 func isCircularRef(departmentId, targetParentId int) bool {
 	chain, err := model.GetDepartmentChain(targetParentId)
 	if err != nil {
-		return true
+		// Only return true on circular reference; DB errors should not block the update
+		return false
 	}
 	for _, d := range chain {
 		if d.Id == departmentId {
@@ -161,6 +164,12 @@ func DeleteDepartment(c *gin.Context) {
 	children, err := model.GetDirectChildren(id)
 	if err == nil && len(children) > 0 {
 		common.ApiError(c, errors.New("该部门下还有子部门，请先删除或移动子部门"))
+		return
+	}
+	// 检查是否有用户归属此部门（包括软删除的用户）
+	var memberCount int64
+	if err := model.DB.Unscoped().Model(&model.User{}).Where("department_id = ?", id).Count(&memberCount).Error; err == nil && memberCount > 0 {
+		common.ApiError(c, errors.New("该部门下还有用户，请先将用户移至其他部门"))
 		return
 	}
 	dept, err := model.GetDepartmentByID(id)
@@ -239,14 +248,14 @@ func GetDepartmentUsage(c *gin.Context) {
 	if err != nil {
 		descendantIds = []int{id}
 	}
+	// Batch query all descendant departments
+	var depts []model.Department
 	var treeQuota, treeUsedQuota int64
-	for _, did := range descendantIds {
-		d, err := model.GetDepartmentByID(did)
-		if err != nil {
-			continue
+	if err := model.DB.Where("id IN ? AND deleted_at IS NULL", descendantIds).Select("id, quota, used_quota").Find(&depts).Error; err == nil {
+		for _, d := range depts {
+			treeQuota += int64(d.Quota)
+			treeUsedQuota += int64(d.UsedQuota)
 		}
-		treeQuota += int64(d.Quota)
-		treeUsedQuota += int64(d.UsedQuota)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

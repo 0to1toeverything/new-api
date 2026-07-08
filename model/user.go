@@ -59,13 +59,14 @@ type User struct {
 
 func (user *User) ToBaseUser() *UserBase {
 	cache := &UserBase{
-		Id:       user.Id,
-		Group:    user.Group,
-		Quota:    user.Quota,
-		Status:   user.Status,
-		Username: user.Username,
-		Setting:  user.Setting,
-		Email:    user.Email,
+		Id:           user.Id,
+		Group:        user.Group,
+		Quota:        user.Quota,
+		Status:       user.Status,
+		Username:     user.Username,
+		Setting:      user.Setting,
+		Email:        user.Email,
+		DepartmentId: user.DepartmentId,
 	}
 	return cache
 }
@@ -208,7 +209,6 @@ func GetAllUsers(pageInfo *common.PageInfo, departmentId *int) (users []*User, t
 	// Get total count within transaction
 	query := tx.Unscoped().Model(&User{})
 	if departmentId != nil && *departmentId != 0 {
-	if departmentId != nil && *departmentId != 0 {
 		query = query.Where("department_id = ?", *departmentId)
 	}
 	err = query.Count(&total).Error
@@ -218,8 +218,7 @@ func GetAllUsers(pageInfo *common.PageInfo, departmentId *int) (users []*User, t
 	}
 
 	// Get paginated users within same transaction
-	query := tx.Unscoped()
-	if departmentId != nil && *departmentId != 0 {
+	query = tx.Unscoped()
 	if departmentId != nil && *departmentId != 0 {
 		query = query.Where("department_id = ?", *departmentId)
 	}

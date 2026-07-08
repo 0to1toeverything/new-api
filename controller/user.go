@@ -296,6 +296,12 @@ func GetAllUsers(c *gin.Context) {
 
 func SearchUsers(c *gin.Context) {
 	keyword := c.Query("keyword")
+	var departmentId *int
+	if deptStr := c.Query("department_id"); deptStr != "" {
+		if parsed, err := strconv.Atoi(deptStr); err == nil {
+			departmentId = &parsed
+		}
+	}
 	group := c.Query("group")
 	var role *int
 	if roleStr := c.Query("role"); roleStr != "" {

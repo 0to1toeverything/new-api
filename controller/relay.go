@@ -178,9 +178,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			newAPIError = service.NormalizeViolationFeeError(newAPIError)
 			if relayInfo.Billing != nil {
 				relayInfo.Billing.Refund(c)
+			}
 			// 退还部门预扣额度
 			service.RefundDepartmentQuota(c, relayInfo, relayInfo.FinalPreConsumedQuota)
-			}
 			service.ChargeViolationFeeIfNeeded(c, relayInfo, newAPIError)
 		}
 	}()
@@ -509,8 +509,10 @@ func RelayTask(c *gin.Context) {
 	var result *relay.TaskSubmitResult
 	var taskErr *dto.TaskError
 	defer func() {
-		if taskErr != nil && relayInfo.Billing != nil {
-			relayInfo.Billing.Refund(c)
+		if taskErr != nil {
+			if relayInfo.Billing != nil {
+				relayInfo.Billing.Refund(c)
+			}
 			// 退还部门预扣额度
 			service.RefundDepartmentQuota(c, relayInfo, relayInfo.FinalPreConsumedQuota)
 		}

@@ -268,6 +268,9 @@ func modelPriceHelperTiered(c *gin.Context, info *relaycommon.RelayInfo, promptT
 	preConsumedQuota := billingexpr.QuotaRound(quotaBeforeGroup * groupRatioInfo.GroupRatio)
 
 	freeModel := false
+	if preConsumedQuota == 0 {
+		freeModel = true
+	}
 	if !operation_setting.GetQuotaSetting().EnableFreeModelPreConsume {
 		if groupRatioInfo.GroupRatio == 0 {
 			preConsumedQuota = 0

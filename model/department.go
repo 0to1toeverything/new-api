@@ -67,6 +67,7 @@ func (d *Department) Update() error {
 	return DB.Model(d).Updates(map[string]interface{}{
 		"name":           d.Name,
 		"parent_id":      d.ParentId,
+		"quota":          d.Quota,
 		"oversell_limit": d.OversellLimit,
 		"ratio":          d.Ratio,
 		"monthly_quota":  d.MonthlyQuota,
@@ -105,7 +106,7 @@ func GetAllDepartments(pageInfo *common.PageInfo, keyword string, parentId *int)
 	var depts []Department
 	var total int64
 
-	query := DB.Unscoped().Model(&Department{})
+	query := DB.Model(&Department{})
 	if keyword != "" {
 		query = query.Where("name LIKE ?", "%"+keyword+"%")
 	}
@@ -158,7 +159,7 @@ func GetDepartmentChain(departmentId int) ([]Department, error) {
 // GetDepartmentTree 获取完整部门树
 func GetDepartmentTree() ([]*DepartmentTreeNode, error) {
 	var allDepts []Department
-	if err := DB.Order("id ASC").Find(&allDepts).Error; err != nil {
+	if err := DB.Where("deleted_at IS NULL").Order("id ASC").Find(&allDepts).Error; err != nil {
 		return nil, err
 	}
 
@@ -241,8 +242,13 @@ func ConsumeDepartmentQuota(tx *gorm.DB, departmentId int, amount int, userId in
 	}
 
 	var dept Department
-	if err := tx.Set("gorm:query_option", "FOR UPDATE").
-		First(&dept, "id = ?", departmentId).Error; err != nil {
+	// FOR UPDATE is skipped for SQLite (no row-level locking support);
+	// MySQL and PostgreSQL will still use it for concurrent safety.
+	query := tx
+	if common.MainDatabaseType() != common.DatabaseTypeSQLite {
+		query = tx.Set("gorm:query_option", "FOR UPDATE")
+	}
+	if err := query.First(&dept, "id = ?", departmentId).Error; err != nil {
 		return err
 	}
 
@@ -299,8 +305,8 @@ func GetDepartmentMembers(departmentId int, pageInfo *common.PageInfo) ([]User, 
 	var users []User
 	var total int64
 
-	descendantIds, _ := GetDepartmentDescendantIds(departmentId)
-	if len(descendantIds) == 0 {
+	descendantIds, err := GetDepartmentDescendantIds(departmentId)
+	if err != nil || len(descendantIds) == 0 {
 		descendantIds = []int{departmentId}
 	}
 	query := DB.Unscoped().Model(&User{}).Where("department_id IN ?", descendantIds)
@@ -321,7 +327,7 @@ func ResetAllDepartmentMonthlyQuota() (int64, error) {
 		Where("status = ? AND monthly_quota > 0", 1).
 		Updates(map[string]interface{}{
 			"used_quota": 0,
-			"quota":      gorm.Expr("monthly_quota"),
+			"quota":      gorm.Expr("CASE WHEN quota > monthly_quota THEN quota ELSE monthly_quota END"),
 		})
 	if result.Error != nil {
 		return 0, result.Error

@@ -472,6 +472,7 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		UserGroup:  common.GetContextKeyString(c, constant.ContextKeyUserGroup),
 		UserQuota:  common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
 		UserEmail:  common.GetContextKeyString(c, constant.ContextKeyUserEmail),
+		DepartmentId: getContextKeyIntPtr(c, constant.ContextKeyUserDepartmentId),
 
 		OriginModelName: common.GetContextKeyString(c, constant.ContextKeyOriginalModel),
 
@@ -514,6 +515,31 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 	}
 
 	return info
+}
+
+// getContextKeyIntPtr retrieves an optional integer value from Gin context as *int.
+func getContextKeyIntPtr(c *gin.Context, key constant.ContextKey) *int {
+	if c == nil {
+		return nil
+	}
+	val, exists := c.Get(string(key))
+	if !exists || val == nil {
+		return nil
+	}
+	switch v := val.(type) {
+	case int:
+		if v == 0 {
+			return nil
+		}
+		return &v
+	case *int:
+		if v == nil || *v == 0 {
+			return nil
+		}
+		return v
+	default:
+		return nil
+	}
 }
 
 func cloneRequestHeaders(c *gin.Context) map[string]string {
