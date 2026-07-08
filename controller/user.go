@@ -274,8 +274,14 @@ func Register(c *gin.Context) {
 }
 
 func GetAllUsers(c *gin.Context) {
+	var departmentId *int
+	if deptStr := c.Query("department_id"); deptStr != "" {
+		if parsed, err := strconv.Atoi(deptStr); err == nil {
+			departmentId = &parsed
+		}
+	}
 	pageInfo := common.GetPageQuery(c)
-	users, total, err := model.GetAllUsers(pageInfo)
+	users, total, err := model.GetAllUsers(pageInfo, departmentId)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -304,7 +310,7 @@ func SearchUsers(c *gin.Context) {
 		}
 	}
 	pageInfo := common.GetPageQuery(c)
-	users, total, err := model.SearchUsers(keyword, group, role, status, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	users, total, err := model.SearchUsers(keyword, group, role, status, departmentId, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return

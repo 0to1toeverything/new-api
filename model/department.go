@@ -299,7 +299,11 @@ func GetDepartmentMembers(departmentId int, pageInfo *common.PageInfo) ([]User, 
 	var users []User
 	var total int64
 
-	query := DB.Unscoped().Model(&User{}).Where("department_id = ?", departmentId)
+	descendantIds, _ := GetDepartmentDescendantIds(departmentId)
+	if len(descendantIds) == 0 {
+		descendantIds = []int{departmentId}
+	}
+	query := DB.Unscoped().Model(&User{}).Where("department_id IN ?", descendantIds)
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}

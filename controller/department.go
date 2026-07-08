@@ -129,6 +129,7 @@ func UpdateDepartment(c *gin.Context) {
 	}
 	dept.ParentId = req.ParentId
 	dept.OversellLimit = req.OversellLimit
+	dept.MonthlyQuota = req.MonthlyQuota
 	dept.Ratio = req.Ratio
 	dept.Status = req.Status
 	if err := dept.Update(); err != nil {
