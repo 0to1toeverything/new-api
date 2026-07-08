@@ -344,6 +344,15 @@ export const getUsersColumns = ({
       render: (text, record, index) => {
         return <div>{renderGroup(text)}</div>;
       },
+    {
+      title: t('Department'),
+      dataIndex: 'department_id',
+      width: 120,
+      render: (text) => {
+        if (!text) return <div style={{ color: '#999' }}>—</div>;
+        return <div>{text}</div>;
+      },
+    },
     },
     {
       title: t('角色'),
