@@ -131,7 +131,6 @@ export function UsersMutateDrawer({
   const { data: permissionCatalog = EMPTY_PERMISSION_CATALOG } = useQuery({
     queryKey: ['admin-permission-catalog'],
     queryFn: getPermissionCatalog,
-  getDepartments,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -390,6 +389,34 @@ export function UsersMutateDrawer({
                                 </SelectItem>
                               ))}
                             </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='department_id'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Department')}</FormLabel>
+                        <Select
+                          onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                          value={field.value?.toString() || ''}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('Select a department')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {departments.filter((d: any) => d.status === 1).map((dep: any) => (
+                              <SelectItem key={dep.id} value={String(dep.id)}>
+                                {dep.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
