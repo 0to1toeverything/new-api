@@ -71,6 +71,7 @@ const EditUserModal = (props) => {
   const [adjustLoading, setAdjustLoading] = useState(false);
   const isMobile = useIsMobile();
   const [groupOptions, setGroupOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
   const [bindingModalVisible, setBindingModalVisible] = useState(false);
   const formApiRef = useRef(null);
   const [showAdjustQuotaRaw, setShowAdjustQuotaRaw] = useState(false);
@@ -93,6 +94,7 @@ const EditUserModal = (props) => {
     quota: 0,
     quota_amount: 0,
     group: 'default',
+    department_id: null,
     remark: '',
   });
 
@@ -103,6 +105,16 @@ const EditUserModal = (props) => {
     } catch (e) {
       showError(e.message);
     }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const apiRes = await API.get("/api/prefill_group/?type=department");
+      if (apiRes.data.success) {
+        const depts = (apiRes.data.data || []).map(d => ({ label: d.name, value: d.id }));
+        setDepartmentOptions(depts);
+      }
+    } catch (e) { /* ignore */ }
   };
 
   const handleCancel = () => props.handleClose();
@@ -133,6 +145,7 @@ const EditUserModal = (props) => {
   useEffect(() => {
     loadUser();
     if (userId) fetchGroups();
+    fetchDepartments();
     setBindingModalVisible(false);
   }, [props.editingUser.id]);
 
@@ -366,6 +379,16 @@ const EditUserModal = (props) => {
                           search
                           rules={[{ required: true, message: t('请选择分组') }]}
                         />
+
+                      <Form.Select
+                        field={'department_id'}
+                        label={t('Department')}
+                        style={{ width: '100%' }}
+                        optionList={departmentOptions}
+                        placeholder={t('Select department')}
+                        value={inputs?.department_id}
+                        onChange={(value) => setInputs({ ...inputs, department_id: value })}
+                      />
                       </Col>
 
                       <Col span={10}>
