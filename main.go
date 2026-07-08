@@ -24,6 +24,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/oauth"
 	perfmetrics "github.com/QuantumNous/new-api/pkg/perf_metrics"
+	"github.com/QuantumNous/new-api/pkg/trace"
 	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/router"
 	"github.com/QuantumNous/new-api/service"
@@ -168,6 +169,10 @@ func main() {
 	}
 
 	// Initialize HTTP server
+
+	// Initialize trace recorder (default enabled, writes to data/traces/)
+	trace.InitRecorder()
+	defer trace.ShutdownRecorder()
 	server := gin.New()
 	server.Use(gin.CustomRecovery(func(c *gin.Context, err any) {
 		common.SysLog(fmt.Sprintf("panic detected: %v", err))
@@ -181,6 +186,7 @@ func main() {
 	// This will cause SSE not to work!!!
 	//server.Use(gzip.Gzip(gzip.DefaultCompression))
 	server.Use(middleware.RequestId())
+	server.Use(trace.Middleware())
 	server.Use(middleware.PoweredBy())
 	server.Use(middleware.I18n())
 	middleware.SetUpLogger(server)
