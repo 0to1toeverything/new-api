@@ -1102,3 +1102,12 @@ func RootUserExists() bool {
 	}
 	return true
 }
+
+// ResetAllUserMonthlyQuota resets used_quota to 0 for all active users.
+// Returns the number of affected rows.
+func ResetAllUserMonthlyQuota() (int64, error) {
+	result := DB.Model(&User{}).
+		Where("status = ?", common.UserStatusEnabled).
+		Update("used_quota", 0)
+	return result.RowsAffected, result.Error
+}

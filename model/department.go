@@ -309,3 +309,22 @@ func GetDepartmentMembers(departmentId int, pageInfo *common.PageInfo) ([]User, 
 	}
 	return users, total, nil
 }
+
+// ResetAllDepartmentMonthlyQuota 重置所有启用部门的月度额度
+// used_quota 清零，quota 恢复为 monthly_quota 值
+func ResetAllDepartmentMonthlyQuota() (int64, error) {
+	result := DB.Model(&Department{}).
+		Where("status = ? AND monthly_quota > 0", 1).
+		Updates(map[string]interface{}{
+			"used_quota": 0,
+			"quota":      gorm.Expr("monthly_quota"),
+		})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	// 对于没有设 monthly_quota 的启用部门，只清零 used_quota
+	result2 := DB.Model(&Department{}).
+		Where("status = ? AND monthly_quota <= 0", 1).
+		Update("used_quota", 0)
+	return result.RowsAffected + result2.RowsAffected, result2.Error
+}

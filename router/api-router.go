@@ -321,6 +321,7 @@ func SetApiRouter(router *gin.Engine) {
 			departmentRootRoute.PUT("/:id", controller.UpdateDepartment)
 			departmentRootRoute.DELETE("/:id", controller.DeleteDepartment)
 			departmentRootRoute.POST("/:id/recharge", controller.RechargeDepartment)
+			departmentRootRoute.POST("/reset-monthly-quota", controller.ResetMonthlyQuota)
 		}
 
 		prefillGroupRoute := apiRouter.Group("/prefill_group")

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -254,5 +255,29 @@ func GetDepartmentUsage(c *gin.Context) {
 			"tree_used_quota":  treeUsedQuota,
 			"descendant_count": len(descendantIds) - 1,
 		},
+	})
+}
+
+// ResetMonthlyQuota 重置所有部门和用户的月度额度
+// 部门：used_quota 清零，quota 恢复为 monthly_quota
+// 用户：used_quota 清零
+func ResetMonthlyQuota(c *gin.Context) {
+	deptCount, err := model.ResetAllDepartmentMonthlyQuota()
+	if err != nil {
+		common.ApiError(c, fmt.Errorf("重置部门额度失败: %w", err))
+		return
+	}
+
+	userCount, err := model.ResetAllUserMonthlyQuota()
+	if err != nil {
+		common.ApiError(c, fmt.Errorf("重置用户额度失败: %w", err))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"message":       "月度额度重置成功",
+		"departments":   deptCount,
+		"users":         userCount,
 	})
 }
