@@ -109,7 +109,7 @@ const EditUserModal = (props) => {
 
   const fetchDepartments = async () => {
     try {
-      const apiRes = await API.get("/api/prefill_group/?type=department");
+      const apiRes = await API.get("/api/department/names");
       if (apiRes.data.success) {
         const depts = (apiRes.data.data || []).map(d => ({ label: d.name, value: d.id }));
         setDepartmentOptions(depts);
