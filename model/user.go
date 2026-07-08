@@ -208,6 +208,7 @@ func GetAllUsers(pageInfo *common.PageInfo, departmentId *int) (users []*User, t
 	// Get total count within transaction
 	query := tx.Unscoped().Model(&User{})
 	if departmentId != nil && *departmentId != 0 {
+	if departmentId != nil && *departmentId != 0 {
 		query = query.Where("department_id = ?", *departmentId)
 	}
 	err = query.Count(&total).Error
@@ -218,6 +219,7 @@ func GetAllUsers(pageInfo *common.PageInfo, departmentId *int) (users []*User, t
 
 	// Get paginated users within same transaction
 	query := tx.Unscoped()
+	if departmentId != nil && *departmentId != 0 {
 	if departmentId != nil && *departmentId != 0 {
 		query = query.Where("department_id = ?", *departmentId)
 	}
@@ -283,8 +285,6 @@ func SearchUsers(keyword string, group string, role *int, status *int, departmen
 	if departmentId != nil && *departmentId != 0 {
 		query = query.Where("department_id = ?", *departmentId)
 		}
-	}
-
 	// 获取总数
 	err = query.Count(&total).Error
 	if err != nil {
