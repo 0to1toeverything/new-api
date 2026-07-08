@@ -328,3 +328,29 @@ func ResetAllDepartmentMonthlyQuota() (int64, error) {
 		Update("used_quota", 0)
 	return result.RowsAffected + result2.RowsAffected, result2.Error
 }
+
+// DepartmentBudgetSummary 部门预算汇总（用于看板展示）
+type DepartmentBudgetSummary struct {
+	TotalQuota     int `json:"total_quota"`
+	TotalUsedQuota int `json:"total_used_quota"`
+	TotalRemaining int `json:"total_remaining"`
+	DepartmentCount int `json:"department_count"`
+}
+
+// GetDepartmentBudgetSummary 获取所有启用部门的额度汇总
+func GetDepartmentBudgetSummary() *DepartmentBudgetSummary {
+	var summary DepartmentBudgetSummary
+	DB.Model(&Department{}).Where("status = ?", 1).Count(&summary.DepartmentCount)
+
+	row := DB.Model(&Department{}).Where("status = ?", 1).
+		Select("COALESCE(SUM(quota), 0) as total_quota, COALESCE(SUM(used_quota), 0) as total_used_quota").
+		Row()
+	if row != nil {
+		row.Scan(&summary.TotalQuota, &summary.TotalUsedQuota)
+	}
+	summary.TotalRemaining = summary.TotalQuota - summary.TotalUsedQuota
+	if summary.TotalRemaining < 0 {
+		summary.TotalRemaining = 0
+	}
+	return &summary
+}
