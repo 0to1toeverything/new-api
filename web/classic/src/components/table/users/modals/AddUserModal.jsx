@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useRef } from 'react';
 import { API, showError, showSuccess } from '../../../../helpers';
+import { fetchDepartmentData } from '../../../../helpers/department';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import {
   Button,
