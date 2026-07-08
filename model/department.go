@@ -20,6 +20,7 @@ type Department struct {
 	OversellLimit int            `json:"oversell_limit" gorm:"default:0"`     // 超卖上限
 	Ratio         float64        `json:"ratio" gorm:"default:1"`              // 定价倍率
 	Status        int            `json:"status" gorm:"default:1"`             // 1启用 0停用
+	MonthlyQuota  int            `json:"monthly_quota" gorm:"default:0"`      // 月度刷新额度
 	CreatedAt     int64          `json:"created_at"`
 	UpdatedAt     int64          `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index"`
@@ -42,7 +43,7 @@ type DepartmentQuotaLog struct {
 }
 
 // InsertDepartment 创建部门
-func InsertDepartment(name string, parentId *int, quota int, oversellLimit int, ratio float64, status int) (*Department, error) {
+func InsertDepartment(name string, parentId *int, quota int, oversellLimit int, ratio float64, status int, monthlyQuota int) (*Department, error) {
 	dept := &Department{
 		Name:          name,
 		ParentId:      parentId,
@@ -50,6 +51,7 @@ func InsertDepartment(name string, parentId *int, quota int, oversellLimit int, 
 		OversellLimit: oversellLimit,
 		Ratio:         ratio,
 		Status:        status,
+		MonthlyQuota:  monthlyQuota,
 		CreatedAt:     common.GetTimestamp(),
 		UpdatedAt:     common.GetTimestamp(),
 	}
@@ -67,6 +69,7 @@ func (d *Department) Update() error {
 		"parent_id":      d.ParentId,
 		"oversell_limit": d.OversellLimit,
 		"ratio":          d.Ratio,
+		"monthly_quota":  d.MonthlyQuota,
 		"status":         d.Status,
 		"updated_at":     d.UpdatedAt,
 	}).Error

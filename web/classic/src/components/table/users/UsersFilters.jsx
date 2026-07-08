@@ -29,11 +29,13 @@ const UsersFilters = ({
   activePage,
   pageSize,
   groupOptions,
+  departmentOptions,
   loading,
   searching,
   t,
 }) => {
   const formApiRef = useRef(null);
+  const deptOpts = (departmentOptions || []).map(d => ({ label: d.name, value: d.id }));
 
   const handleReset = () => {
     if (!formApiRef.current) return;
@@ -85,6 +87,21 @@ const UsersFilters = ({
             className='w-full'
             showClear
             pure
+            size='small'
+          />
+        </div>
+        <div className='w-full md:w-48'>
+          <Form.Select
+            field='searchDepartment'
+            placeholder={t('选择部门')}
+            optionList={deptOpts}
+            onChange={() => {
+              setTimeout(() => {
+                searchUsers(1, pageSize);
+              }, 100);
+            }}
+            className='w-full'
+            showClear
             size='small'
           />
         </div>

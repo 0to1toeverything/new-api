@@ -161,6 +161,11 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	if priceData.FreeModel {
 		logger.LogInfo(c, fmt.Sprintf("模型 %s 免费，跳过预扣费", relayInfo.OriginModelName))
 	} else {
+		// 部门额度预检查（多级部门从叶子到根逐级校验）
+		newAPIError = service.PreConsumeDepartmentQuota(c, priceData.QuotaToPreConsume, relayInfo)
+		if newAPIError != nil {
+			return
+		}
 		newAPIError = service.PreConsumeBilling(c, priceData.QuotaToPreConsume, relayInfo)
 		if newAPIError != nil {
 			return
@@ -173,6 +178,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			newAPIError = service.NormalizeViolationFeeError(newAPIError)
 			if relayInfo.Billing != nil {
 				relayInfo.Billing.Refund(c)
+			// 退还部门预扣额度
+			service.RefundDepartmentQuota(c, relayInfo, relayInfo.FinalPreConsumedQuota)
 			}
 			service.ChargeViolationFeeIfNeeded(c, relayInfo, newAPIError)
 		}
@@ -504,6 +511,8 @@ func RelayTask(c *gin.Context) {
 	defer func() {
 		if taskErr != nil && relayInfo.Billing != nil {
 			relayInfo.Billing.Refund(c)
+			// 退还部门预扣额度
+			service.RefundDepartmentQuota(c, relayInfo, relayInfo.FinalPreConsumedQuota)
 		}
 	}()
 
@@ -575,6 +584,10 @@ func RelayTask(c *gin.Context) {
 	if taskErr == nil {
 		if settleErr := service.SettleBilling(c, relayInfo, result.Quota); settleErr != nil {
 			common.SysError("settle task billing error: " + settleErr.Error())
+		}
+		// 部门额度结算（多级部门逐级扣减）
+		if settleErr := service.SettleDepartmentQuota(c, relayInfo, result.Quota); settleErr != nil {
+			common.SysError("settle department quota error: " + settleErr.Error())
 		}
 		service.LogTaskConsumption(c, relayInfo)
 

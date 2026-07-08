@@ -93,6 +93,7 @@ type RelayInfo struct {
 	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
 	UserGroup         string // 用户所在分组
 	DepartmentId     *int   // 用户所属部门ID，nil 时走个人钱包
+	DepartmentChainIds []int  `json:"-"` // 部门链ID列表（从叶子到根），用于部门额度检查
 	TokenUnlimited    bool
 	StartTime         time.Time
 	FirstResponseTime time.Time

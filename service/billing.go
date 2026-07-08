@@ -3,6 +3,10 @@ package service
 import (
 	"fmt"
 
+	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
+	"gorm.io/gorm"
+
 	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/types"
@@ -76,4 +80,82 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 		return PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true)
 	}
 	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Department quota billing
+// ---------------------------------------------------------------------------
+
+// PreConsumeDepartmentQuota checks department chain quota before billing.
+// For users assigned to a department, it walks the department chain (leaf→root)
+// and verifies each level has sufficient quota (including oversell_limit).
+// The chain IDs are stored on relayInfo for use in Settle/Refund.
+func PreConsumeDepartmentQuota(c *gin.Context, preConsumedQuota int, relayInfo *relaycommon.RelayInfo) *types.NewAPIError {
+	if relayInfo.DepartmentId == nil || *relayInfo.DepartmentId == 0 {
+		return nil // user not in any department, skip
+	}
+
+	chain, err := model.GetDepartmentChain(*relayInfo.DepartmentId)
+	if err != nil {
+		return types.NewError(
+			fmt.Errorf("获取部门链路失败: %w", err),
+			types.ErrorCodeQueryDataError,
+			types.ErrOptionWithSkipRetry(),
+		)
+	}
+
+	ids := make([]int, 0, len(chain))
+	for _, dept := range chain {
+		if dept.Status != 1 {
+			return types.NewErrorWithStatusCode(
+				fmt.Errorf("部门 %s 已停用", dept.Name),
+				types.ErrorCodeInsufficientUserQuota, 403,
+				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog(),
+			)
+		}
+		available := dept.Quota + dept.OversellLimit - dept.UsedQuota
+		if available < preConsumedQuota {
+			return types.NewErrorWithStatusCode(
+				fmt.Errorf("部门 %s 额度不足, 剩余: %s, 需要: %s",
+					dept.Name, logger.FormatQuota(available), logger.FormatQuota(preConsumedQuota)),
+				types.ErrorCodeInsufficientUserQuota, 403,
+				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog(),
+			)
+		}
+		ids = append(ids, dept.Id)
+	}
+	relayInfo.DepartmentChainIds = ids
+	return nil
+}
+
+// SettleDepartmentQuota deducts quota from the department chain.
+// Must be called AFTER the billing session has settled.
+func SettleDepartmentQuota(c *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuota int) error {
+	if len(relayInfo.DepartmentChainIds) == 0 || actualQuota <= 0 {
+		return nil
+	}
+
+	db := model.DB
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, deptId := range relayInfo.DepartmentChainIds {
+			if err := model.ConsumeDepartmentQuota(tx, deptId, actualQuota, relayInfo.UserId, "API调用消费"); err != nil {
+				return fmt.Errorf("扣减部门 %d 额度失败: %w", deptId, err)
+			}
+		}
+		return nil
+	})
+}
+
+// RefundDepartmentQuota restores department quota on relay failure.
+func RefundDepartmentQuota(c *gin.Context, relayInfo *relaycommon.RelayInfo, preConsumedQuota int) {
+	if len(relayInfo.DepartmentChainIds) == 0 || preConsumedQuota <= 0 {
+		return
+	}
+
+	db := model.DB
+	for _, deptId := range relayInfo.DepartmentChainIds {
+		if err := model.IncreaseDepartmentQuota(db, deptId, preConsumedQuota, relayInfo.UserId, "API调用退款"); err != nil {
+			common.SysLog(fmt.Sprintf("退还部门 %d 额度失败: %s", deptId, err.Error()))
+		}
+	}
 }

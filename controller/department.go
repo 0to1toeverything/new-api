@@ -58,6 +58,7 @@ func CreateDepartment(c *gin.Context) {
 		ParentId      *int    `json:"parent_id"`
 		Quota         int     `json:"quota"`
 		OversellLimit int     `json:"oversell_limit"`
+		MonthlyQuota  int     `json:"monthly_quota"`
 		Ratio         float64 `json:"ratio"`
 		Status        int     `json:"status"`
 	}
@@ -81,7 +82,7 @@ func CreateDepartment(c *gin.Context) {
 			return
 		}
 	}
-	dept, err := model.InsertDepartment(req.Name, req.ParentId, req.Quota, req.OversellLimit, req.Ratio, req.Status)
+	dept, err := model.InsertDepartment(req.Name, req.ParentId, req.Quota, req.OversellLimit, req.Ratio, req.Status, req.MonthlyQuota)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -104,6 +105,7 @@ func UpdateDepartment(c *gin.Context) {
 		Name          string  `json:"name"`
 		ParentId      *int    `json:"parent_id"`
 		OversellLimit int     `json:"oversell_limit"`
+		MonthlyQuota  int     `json:"monthly_quota"`
 		Ratio         float64 `json:"ratio"`
 		Status        int     `json:"status"`
 	}

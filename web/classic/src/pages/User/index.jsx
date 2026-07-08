@@ -19,11 +19,24 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import UsersTable from '../../components/table/users';
+import UsersDepartmentPanel from '../../components/table/users/UsersDepartmentPanel';
+import { Tabs, TabPane } from '@douyinfe/semi-ui';
+import { useTranslation } from 'react-i18next';
 
 const User = () => {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = React.useState('users');
+
   return (
     <div className='mt-[60px] px-2'>
-      <UsersTable />
+      <Tabs activeKey={activeTab} onChange={setActiveTab} className='mb-4'>
+        <TabPane tab={t('用户管理')} itemKey='users'>
+          <UsersTable />
+        </TabPane>
+        <TabPane tab={t('部门管理')} itemKey='departments'>
+          <UsersDepartmentPanel />
+        </TabPane>
+      </Tabs>
     </div>
   );
 };

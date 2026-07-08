@@ -50,6 +50,7 @@ const UsersPage = () => {
     loadUsers,
     activePage,
     pageSize,
+    departmentOptions,
     groupOptions,
     loading,
     searching,
@@ -98,6 +99,7 @@ const UsersPage = () => {
               activePage={activePage}
               pageSize={pageSize}
               groupOptions={groupOptions}
+              departmentOptions={departmentOptions}
               loading={loading}
               searching={searching}
               t={t}
@@ -107,6 +109,7 @@ const UsersPage = () => {
         paginationArea={createCardProPagination({
           currentPage: usersData.activePage,
           pageSize: usersData.pageSize,
+    departmentOptions,
           total: usersData.userCount,
           onPageChange: usersData.handlePageChange,
           onPageSizeChange: usersData.handlePageSizeChange,
