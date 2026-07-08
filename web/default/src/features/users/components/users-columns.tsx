@@ -244,6 +244,21 @@ export function useUsersColumns(): ColumnDef<User>[] {
       size: 140,
     },
     {
+      accessorKey: 'department_id',
+      header: t('Department'),
+      cell: ({ row }) => {
+        const departmentId = row.getValue('department_id') as number | null
+        if (departmentId == null) return <span className="text-muted-foreground">—</span>
+        return <BadgeCell><span className="text-sm">{String(departmentId)}</span></BadgeCell>
+      },
+      filterFn: (row, id, value) => {
+        const depId = row.getValue(id)
+        if (depId == null) return false
+        return String(depId).includes(String(value))
+      },
+      size: 120,
+    },
+    {
       accessorKey: 'role',
       header: t('Role'),
       cell: ({ row }) => {

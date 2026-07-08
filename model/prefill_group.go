@@ -78,6 +78,7 @@ type PrefillGroup struct {
 	Name        string         `json:"name" gorm:"size:64;not null;uniqueIndex:uk_prefill_name,where:deleted_at IS NULL"`
 	Type        string         `json:"type" gorm:"size:32;index;not null"`
 	Items       JSONValue      `json:"items" gorm:"type:json"`
+	Status       int            `json:"status" gorm:"type:int;default:1"` // 1=enabled, 2=disabled
 	Description string         `json:"description,omitempty" gorm:"type:varchar(255)"`
 	CreatedTime int64          `json:"created_time" gorm:"bigint"`
 	UpdatedTime int64          `json:"updated_time" gorm:"bigint"`

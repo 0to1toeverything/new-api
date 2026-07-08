@@ -330,6 +330,7 @@ func SetApiRouter(router *gin.Engine) {
 			prefillGroupRoute.POST("/", controller.CreatePrefillGroup)
 			prefillGroupRoute.PUT("/", controller.UpdatePrefillGroup)
 			prefillGroupRoute.DELETE("/:id", controller.DeletePrefillGroup)
+			prefillGroupRoute.PUT("/:id/toggle_status", controller.TogglePrefillGroupStatus)
 		}
 
 		mjRoute := apiRouter.Group("/mj")

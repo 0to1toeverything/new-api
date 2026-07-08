@@ -46,6 +46,7 @@ export const userSchema = z.object({
   used_quota: z.number(),
   request_count: z.number(),
   group: z.string(),
+  department_id: z.number().nullable().optional(),
   aff_code: z.string().optional(),
   aff_count: z.number().optional(),
   aff_quota: z.number().optional(),
@@ -97,6 +98,7 @@ export interface GetUsersResponse {
 export interface SearchUsersParams {
   keyword?: string
   group?: string
+  department_id?: number | null
   role?: string
   status?: string
   p?: number
@@ -110,6 +112,7 @@ export interface UserFormData {
   role?: number // Only used when creating user
   quota?: number // Only used when updating user
   group?: string // Only used when updating user
+  department_id?: number | null
   remark?: string // Only used when updating user
   admin_permissions?: AdminPermissionMatrix
 }

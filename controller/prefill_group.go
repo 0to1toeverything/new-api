@@ -88,3 +88,28 @@ func DeletePrefillGroup(c *gin.Context) {
 	}
 	common.ApiSuccess(c, nil)
 }
+
+// TogglePrefillGroupStatus 切换预填组的启用/禁用状态
+func TogglePrefillGroupStatus(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	var g model.PrefillGroup
+	if err := model.DB.First(&g, id).Error; err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if g.Status == 1 {
+		g.Status = 2
+	} else {
+		g.Status = 1
+	}
+	if err := g.Update(); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, &g)
+}

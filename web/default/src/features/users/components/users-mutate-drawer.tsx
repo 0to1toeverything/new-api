@@ -80,6 +80,7 @@ import {
   getUser,
   getGroups,
   getPermissionCatalog,
+  getDepartments,
 } from '../api'
 import { BINDING_FIELDS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import {
@@ -119,11 +120,18 @@ export function UsersMutateDrawer({
   })
 
   const groups = groupsData?.data || []
+  const { data: departmentsData } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => getDepartments(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const departments = departmentsData?.data || []
 
   // Permission catalog is owned by the backend; fetched once and reused.
   const { data: permissionCatalog = EMPTY_PERMISSION_CATALOG } = useQuery({
     queryKey: ['admin-permission-catalog'],
     queryFn: getPermissionCatalog,
+  getDepartments,
     staleTime: 5 * 60 * 1000,
   })
 

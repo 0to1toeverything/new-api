@@ -207,3 +207,21 @@ export async function adminUnbindCustomOAuth(
   )
   return res.data
 }
+
+// ============================================================================
+// Department APIs
+// ============================================================================
+
+export interface Department {
+  id: number
+  name: string
+  status: number
+}
+
+/**
+ * Get all departments (PrefillGroups with type=department)
+ */
+export async function getDepartments(): Promise<ApiResponse<Department[]>> {
+  const res = await api.get('/api/prefill_group/?type=department')
+  return res.data
+}
