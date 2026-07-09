@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -53,12 +54,8 @@ func Middleware() gin.HandlerFunc {
 			Query:     c.Request.URL.RawQuery,
 		}
 
-		// Auth hash
-		auth := c.Request.Header.Get("Authorization")
-		if auth != "" && cfg.AuthHashSalt != "" {
-			rec.AuthHash = hashAuth(auth, cfg.AuthHashSalt)
-		}
-
+		// User ID: read from context after auth middleware has run.
+		// We defer this until c.Next() completes, then extract.
 		// Client info
 		rec.ClientIP = clientIP(c.Request)
 		rec.UserAgent = c.Request.Header.Get("User-Agent")
@@ -90,6 +87,28 @@ func Middleware() gin.HandlerFunc {
 
 		// Execute the handler chain
 		c.Next()
+
+		// Extract user ID and username from auth context (set by TokenAuth middleware)
+		var userID, userName string
+		if uid, exists := c.Get("id"); exists {
+			switch v := uid.(type) {
+			case int:
+				userID = strconv.Itoa(v)
+			case string:
+				userID = v
+			}
+		}
+		if uname, exists := c.Get("username"); exists {
+			if s, ok := uname.(string); ok {
+				userName = s
+			}
+		}
+		// Build human-readable user identifier
+		if userID != "" && userName != "" {
+			rec.AuthHash = userID + ":" + userName
+		} else {
+			rec.AuthHash = userID
+		}
 
 		// Fill response info
 		endedAt := time.Now().UTC()

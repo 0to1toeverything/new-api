@@ -216,12 +216,42 @@ func fillRequestSummary(rec *Record) {
 			rec.SessionID = sid
 		}
 	}
-	if rec.SessionID == "" {
-		rec.SessionID = rec.AuthHash
+	if rec.SessionID == "" && rec.AuthHash != "" {
+		rec.SessionID = computeSessionID(rec.AuthHash, body)
 	}
 	if stream, ok := body["stream"].(bool); ok {
 		rec.Stream = &stream
 	}
+}
+
+// computeSessionID derives a stable session ID from the auth hash and request body.
+// For chat requests: session = SHA256(authHash + model + first_user_message)
+// For non-chat requests: session = SHA256(authHash + "non-chat").
+// The client-supplied session_id (if any) takes precedence and is handled before this call.
+func computeSessionID(authHash string, body map[string]any) string {
+	model, _ := body["model"].(string)
+	var fingerprint string
+
+	if msgs, ok := body["messages"].([]any); ok && len(msgs) > 0 {
+		for _, m := range msgs {
+			msg, ok := m.(map[string]any)
+			if !ok {
+				continue
+			}
+			if role, _ := msg["role"].(string); role == "user" {
+				content, _ := msg["content"].(string)
+				fingerprint = content
+				break
+			}
+		}
+	}
+	if fingerprint == "" {
+		fingerprint = "non-chat"
+	}
+
+	payload := strings.Join([]string{authHash, model, fingerprint}, "|")
+	sum := sha256.Sum256([]byte(payload))
+	return hex.EncodeToString(sum[:])
 }
 
 func fillResponseSummary(rec *Record) {

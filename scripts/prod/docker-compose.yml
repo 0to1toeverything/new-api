@@ -30,6 +30,11 @@ services:
       - SQL_DSN=postgresql://${SQL_USER}:${SQL_PASSWORD}@${SQL_HOST}:${SQL_PORT}/${SQL_DB}
       - REDIS_CONN_STRING=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
       - TZ=Asia/Shanghai
+      - LANGFUSE_ENABLED=${LANGFUSE_ENABLED}
+      - LANGFUSE_HOST=${LANGFUSE_HOST}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_ENVIRONMENT=${LANGFUSE_ENVIRONMENT}
     depends_on:
       - postgres
       - redis
@@ -46,6 +51,11 @@ services:
       - SQL_DSN=postgresql://${SQL_USER}:${SQL_PASSWORD}@${SQL_HOST}:${SQL_PORT}/${SQL_DB}
       - REDIS_CONN_STRING=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
       - TZ=Asia/Shanghai
+      - LANGFUSE_ENABLED=${LANGFUSE_ENABLED}
+      - LANGFUSE_HOST=${LANGFUSE_HOST}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_ENVIRONMENT=${LANGFUSE_ENVIRONMENT}
     depends_on:
       - postgres
       - redis

@@ -13,13 +13,6 @@ if [ -f ../.env ]; then
 fi
 PROD_IP="${1:-${PROD_IP:-192.168.6.114}}"
 REGISTRY="${REGISTRY:-192.168.6.247:5000}"
-SSH_USER="${SSH_USER:-zhuxi}"
-SSH_KEY_PATH="${SSH_KEY_PATH:-/home/zhuxi/.ssh/id_ed25519}"
-REMOTE_DIR="${REMOTE_DIR:-~/allinone/new-api}"
-
-SSH_OPTS="-F /dev/null -i ${SSH_KEY_PATH} -o PasswordAuthentication=no"
-SSH_CMD="ssh ${SSH_OPTS} ${SSH_USER}@${PROD_IP}"
-SCP_CMD="scp ${SSH_OPTS}"
 
 echo "==> 1/4 检查镜像是否已构建 ..."
 SHORT_HASH=$(git -C .. rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -32,17 +25,21 @@ else
 fi
 
 echo "==> 2/4 拷贝配置到生产机 ..."
-${SSH_CMD} "mkdir -p ${REMOTE_DIR}"
-${SCP_CMD} ../.env ./prod/docker-compose.yml ./prod/nginx.conf ${SSH_USER}@${PROD_IP}:${REMOTE_DIR}/
+SSH_CMD="ssh -F /dev/null -i /home/zhuxi/.ssh/id_ed25519 -o PasswordAuthentication=no zhuxi@${PROD_IP}"
+SCP_CMD="scp -F /dev/null -i /home/zhuxi/.ssh/id_ed25519 -o PasswordAuthentication=no"
+
+${SSH_CMD} 'mkdir -p ~/allinone/new-api'
+${SCP_CMD} ../.env ./prod/docker-compose.yml ./prod/nginx.conf zhuxi@${PROD_IP}:~/allinone/new-api/
 
 echo "==> 2.5/4 同步根目录 docker-compose.yml（供远程操作参考）..."
-${SCP_CMD} ../docker-compose.yml ${SSH_USER}@${PROD_IP}:${REMOTE_DIR}/docker-compose.root.yml 2>/dev/null || true
+${SCP_CMD} ../docker-compose.yml zhuxi@${PROD_IP}:~/allinone/new-api/docker-compose.root.yml 2>/dev/null || true
 
 echo "==> 3/4 拉取最新镜像 ..."
-${SSH_CMD} "cd ${REMOTE_DIR} && sudo docker compose pull"
+# 仅拉取 new-api 镜像（基础镜像已缓存，且生产机无法访问 Docker Hub）
+${SSH_CMD} "cd ~/allinone/new-api && sudo docker compose pull new-api-1 new-api-2"
 
 echo "==> 4/4 轮替升级（零宕机）..."
-ssh -tt ${SSH_OPTS} ${SSH_USER}@${PROD_IP} "cd ${REMOTE_DIR} && \
+ssh -tt -F /dev/null -i /home/zhuxi/.ssh/id_ed25519 zhuxi@${PROD_IP} "cd ~/allinone/new-api && \
   echo '--- 先升级 new-api-2（此时 new-api-1 继续接受请求）---' && \
   sudo docker compose up -d --no-deps new-api-2 && \
   sleep 8 && \
