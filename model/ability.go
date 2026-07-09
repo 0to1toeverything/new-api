@@ -38,21 +38,28 @@ func GetAllEnableAbilityWithChannels() ([]AbilityWithChannel, error) {
 		Select("abilities.*, channels.type as channel_type, channels.name as channel_name, channels.icon as channel_icon").
 		Joins("left join channels on abilities.channel_id = channels.id").
 		Where("abilities.enabled = ?", true).
+		Where("channels.type != ?", constant.ChannelTypeDummy).
 		Scan(&abilities).Error
 	return abilities, err
 }
 
 func GetGroupEnabledModels(group string) []string {
 	var models []string
-	// Find distinct models
-	DB.Table("abilities").Where(commonGroupCol+" = ? and enabled = ?", group, true).Distinct("model").Pluck("model", &models)
+	// Find distinct models, excluding those from Dummy channels
+	DB.Table("abilities").
+		Joins("left join channels on abilities.channel_id = channels.id").
+		Where("abilities."+commonGroupCol+" = ? and abilities.enabled = ? and (channels.type is null or channels.type != ?)", group, true, constant.ChannelTypeDummy).
+		Distinct("abilities.model").Pluck("abilities.model", &models)
 	return models
 }
 
 func GetEnabledModels() []string {
 	var models []string
-	// Find distinct models
-	DB.Table("abilities").Where("enabled = ?", true).Distinct("model").Pluck("model", &models)
+	// Find distinct models, excluding those from Dummy channels
+	DB.Table("abilities").
+		Joins("left join channels on abilities.channel_id = channels.id").
+		Where("abilities.enabled = ? and (channels.type is null or channels.type != ?)", true, constant.ChannelTypeDummy).
+		Distinct("abilities.model").Pluck("abilities.model", &models)
 	return models
 }
 

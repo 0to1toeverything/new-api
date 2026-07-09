@@ -305,6 +305,7 @@ func UpdateToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	go model.UpdateLogTokenName(cleanToken.Id, cleanToken.Name)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

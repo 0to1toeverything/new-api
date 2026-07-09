@@ -56,7 +56,7 @@ const (
 	ChannelTypeReplicate      = 56
 	ChannelTypeCodex          = 57
 	ChannelTypeAdvancedCustom = 58
-	ChannelTypeDummy          // this one is only for count, do not add any channel after this
+	ChannelTypeDummy = 59 // this one is only for count, do not add any channel after this
 
 )
 
@@ -122,6 +122,15 @@ var ChannelBaseURLs = []string{
 	"",                                          //58
 }
 
+// GetBaseURL returns the default base URL for the given channel type.
+// It safely handles out-of-range indices (e.g. Dummy type 59) by returning "".
+func GetBaseURL(channelType int) string {
+	if channelType >= 0 && channelType < len(ChannelBaseURLs) {
+		return ChannelBaseURLs[channelType]
+	}
+	return ""
+}
+
 var ChannelTypeNames = map[int]string{
 	ChannelTypeUnknown:        "Unknown",
 	ChannelTypeOpenAI:         "OpenAI",
@@ -178,6 +187,7 @@ var ChannelTypeNames = map[int]string{
 	ChannelTypeReplicate:      "Replicate",
 	ChannelTypeCodex:          "ChatGPT Subscription (Codex)",
 	ChannelTypeAdvancedCustom: "Advanced Custom",
+	ChannelTypeDummy:          "Dummy",
 }
 
 func GetChannelTypeName(channelType int) string {

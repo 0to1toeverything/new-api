@@ -1,6 +1,6 @@
-# New-API 高可用部署（生产机 192.168.6.114）
+# New-API 高可用部署（生产机 ${PROD_IP}）
 # 启动: docker compose up -d
-# 滚动升级: docker compose up -d --no-deps new-api-1 && sleep 5 && docker compose up -d --no-deps new-api-2
+# 滚动升级: docker compose up -d --no-deps new-api-1 && sleep 8 && docker compose up -d --no-deps new-api-2
 
 services:
   # === 负载均衡 ===
@@ -18,30 +18,33 @@ services:
 
   # === 两个 new-api 实例 ===
   new-api-1:
-    image: 192.168.6.247:5000/new-api:latest
+    image: ${REGISTRY}/new-api:latest
     container_name: new-api-1
     restart: always
+    # 给 Go 进程足够时间优雅关闭（main.go 中 SHUTDOWN_TIMEOUT_SECONDS 默认 120s）
+    stop_grace_period: 130s
     volumes:
       - ./data-1:/data
     environment:
-      - SESSION_SECRET=5a08b3f12f9794abd4d0fa643befcf6b2e108e8714677d7a3333ead420a45744
-      - SQL_DSN=postgresql://newapi:adaf5c94692108bc@postgres:5432/new-api
-      - REDIS_CONN_STRING=redis://:b6211fe8612954a2@redis:6379
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SQL_DSN=postgresql://${SQL_USER}:${SQL_PASSWORD}@${SQL_HOST}:${SQL_PORT}/${SQL_DB}
+      - REDIS_CONN_STRING=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
       - TZ=Asia/Shanghai
     depends_on:
       - postgres
       - redis
 
   new-api-2:
-    image: 192.168.6.247:5000/new-api:latest
+    image: ${REGISTRY}/new-api:latest
     container_name: new-api-2
     restart: always
+    stop_grace_period: 130s
     volumes:
       - ./data-2:/data
     environment:
-      - SESSION_SECRET=5a08b3f12f9794abd4d0fa643befcf6b2e108e8714677d7a3333ead420a45744
-      - SQL_DSN=postgresql://newapi:adaf5c94692108bc@postgres:5432/new-api
-      - REDIS_CONN_STRING=redis://:b6211fe8612954a2@redis:6379
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SQL_DSN=postgresql://${SQL_USER}:${SQL_PASSWORD}@${SQL_HOST}:${SQL_PORT}/${SQL_DB}
+      - REDIS_CONN_STRING=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
       - TZ=Asia/Shanghai
     depends_on:
       - postgres
@@ -53,9 +56,9 @@ services:
     container_name: new-api-db
     restart: always
     environment:
-      POSTGRES_USER: newapi
-      POSTGRES_PASSWORD: adaf5c94692108bc
-      POSTGRES_DB: new-api
+      POSTGRES_USER: ${SQL_USER}
+      POSTGRES_PASSWORD: ${SQL_PASSWORD}
+      POSTGRES_DB: ${SQL_DB}
     volumes:
       - ./pgdata:/var/lib/postgresql/data
 
@@ -63,6 +66,6 @@ services:
     image: redis:7-alpine
     container_name: new-api-redis
     restart: always
-    command: redis-server --requirepass b6211fe8612954a2
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - ./redisdata:/data

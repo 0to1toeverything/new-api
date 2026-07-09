@@ -90,8 +90,14 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 // and verifies each level has sufficient quota (including oversell_limit).
 // The chain IDs are stored on relayInfo for use in Settle/Refund.
 func PreConsumeDepartmentQuota(c *gin.Context, preConsumedQuota int, relayInfo *relaycommon.RelayInfo) *types.NewAPIError {
+	// Fast path: DepartmentId already loaded in relayInfo from cache
 	if relayInfo.DepartmentId == nil || *relayInfo.DepartmentId == 0 {
-		return nil // user not in any department, skip
+		// Fallback: query DB (handles stale Redis cache without DepartmentId)
+		user, err := model.GetUserById(relayInfo.UserId, false)
+		if err != nil || user.DepartmentId == nil || *user.DepartmentId == 0 {
+			return nil // user not in any department, skip
+		}
+		relayInfo.DepartmentId = user.DepartmentId
 	}
 
 	chain, err := model.GetDepartmentChain(*relayInfo.DepartmentId)

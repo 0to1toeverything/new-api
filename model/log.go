@@ -103,6 +103,19 @@ func createLog(log *Log) error {
 	return LOG_DB.Create(log).Error
 }
 
+// UpdateLogTokenName updates the token_name in all log records for a given token_id.
+// This ensures that renaming a token also updates the name displayed in usage logs.
+// The update runs in a best-effort manner; errors are logged but not returned
+// to the caller, so the token update response is not delayed by logging.
+func UpdateLogTokenName(tokenId int, newName string) {
+	err := LOG_DB.Model(&Log{}).Where("token_id = ?", tokenId).
+		Update("token_name", newName).Error
+	if err != nil {
+		logger.LogWarn(context.Background(),
+			fmt.Sprintf("failed to update log token_name for token_id %d: %s", tokenId, err.Error()))
+	}
+}
+
 func clickHouseLogOrder(prefix string) string {
 	return prefix + "created_at desc, " + prefix + "request_id desc"
 }

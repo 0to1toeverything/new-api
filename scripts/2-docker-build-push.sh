@@ -3,7 +3,13 @@
 set -e
 cd "$(dirname "$0")/.."
 
-REGISTRY="192.168.6.247:5000"
+# 加载 .env（如果存在）
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
+REGISTRY="${REGISTRY:-192.168.6.247:5000}"
 SHORT_HASH=$(git rev-parse --short HEAD)
 TAG="${1:-${SHORT_HASH}}"
 IMAGE="${REGISTRY}/new-api"
@@ -30,4 +36,4 @@ docker push "${IMAGE}:latest"
 
 echo "==> 完成"
 echo "    生产机执行:"
-echo "    cd ~/new-api && docker compose pull && docker compose up -d"
+echo "    cd ~/new-api && docker compose pull && docker compose up -d --no-deps new-api-1 && sleep 8 && docker compose up -d --no-deps new-api-2"
